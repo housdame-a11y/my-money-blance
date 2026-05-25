@@ -457,16 +457,6 @@
     </div>
   </div>
 
-  <div class="savings-card">
-    <div class="savings-header">
-      <div class="savings-title">🎯 Objectif épargne</div>
-      <button class="btn-set-goal" onclick="openGoalModal()">Modifier</button>
-    </div>
-    <div class="savings-bar-bg"><div class="savings-bar-fill" id="savingsBar" style="width:0%"></div></div>
-    <div class="savings-pct" id="savingsPct">Aucun objectif défini</div>
-    <div class="savings-amount" id="savingsAmt"></div>
-  </div>
-
   <!-- QUICK ADD -->
   <div id="quickAddRow" class="quick-add-row"></div>
 
@@ -500,8 +490,8 @@
 
   <div class="add-tx-form">
     <div class="tx-type-row">
-      <button class="tx-type-btn income active" id="typeIncome" onclick="setTxType('income')">＋ Revenu</button>
-      <button class="tx-type-btn expense" id="typeExpense" onclick="setTxType('expense')">− Dépense</button>
+      <button class="tx-type-btn income active" id="typeIncome" onclick="setTxType('income')">＋ <span id="incomeLabel">Revenu</span></button>
+      <button class="tx-type-btn expense" id="typeExpense" onclick="setTxType('expense')">− <span id="expenseLabel">Dépense</span></button>
     </div>
     <div class="category-row" id="categoryRow"></div>
     <input class="budget-input" type="number" id="budgetAmount" placeholder="Montant (DA)" min="0" />
@@ -704,16 +694,6 @@
     </div>
   </div>
 </div>
-<!-- SAVINGS GOAL MODAL -->
-<div class="modal-overlay" id="goalModal">
-  <div class="modal">
-    <h3>Objectif d'épargne</h3>
-    <label class="modal-label">Objectif mensuel (DA)</label>
-    <input type="number" id="goalInput" placeholder="Ex: 10000" min="0" />
-    <div class="modal-btns">
-      <button class="modal-btn cancel" onclick="closeGoalModal()">Annuler</button>
-      <button class="modal-btn confirm" onclick="saveGoal()">Sauvegarder</button>
-    </div>
   </div>
 </div>
 
@@ -808,7 +788,7 @@
 
   function deletePerson(id) {
     const p = getPerson(id);
-    if (confirm('Supprimer ' + p.name + '?')) {
+    if (confirm(t('deleteConfirm') + p.name + '?')) {
       if (notifIntervals[id]) { clearInterval(notifIntervals[id]); delete notifIntervals[id]; }
       data.people = data.people.filter(x => x.id !== id);
       save(); renderHome();
@@ -839,12 +819,12 @@
     const total = data.people.reduce((s, p) => s + p.balance, 0);
     totalEl.textContent = (total >= 0 ? '' : '−') + Math.abs(total).toLocaleString('fr-DZ') + ' DA';
     totalEl.className = 'total-amount ' + (total > 0 ? 'pos' : total < 0 ? 'neg' : 'zer');
-    labelEl.textContent = total > 0 ? 'You Owe' : total < 0 ? 'Owed to You' : 'All Clear';
-    if (!data.people.length) { list.innerHTML = '<div class="empty-people">Aucune personne ajoutée</div>'; return; }
+    labelEl.textContent = total > 0 ? t('youOwe') : total < 0 ? t('owedToYou') : t('allClear');
+    if (!data.people.length) { list.innerHTML = '<div class="empty-people">' + t("noPeople") + '</div>'; return; }
     list.innerHTML = data.people.map(p => {
       const cls = p.balance > 0 ? 'pos' : p.balance < 0 ? 'neg' : 'zer';
-      const st = p.balance > 0 ? 'Je dois ' + p.balance.toLocaleString('fr-DZ') + ' DA'
-               : p.balance < 0 ? 'Me doit ' + Math.abs(p.balance).toLocaleString('fr-DZ') + ' DA' : 'Quittes';
+      const st = p.balance > 0 ? t('youOwe') + ' ' + p.balance.toLocaleString('fr-DZ') + ' DA'
+               : p.balance < 0 ? t('owedToYou') + ' ' + Math.abs(p.balance).toLocaleString('fr-DZ') + ' DA' : t('allClear');
       const dot = p.notifTime ? '<span class="notif-badge"></span>' : '';
       return '<div class="person-card ' + cls + '" onclick="openPerson(' + p.id + ')" onmousedown="startPress(' + p.id + ')" onmouseup="endPress()" ontouchstart="startPress(' + p.id + ')" ontouchend="endPress()">' +
         '<div class="person-info"><div class="person-name">' + p.name + dot + '</div><div class="person-status">' + st + '</div></div>' +
@@ -881,9 +861,9 @@
 
   function settleUp() {
     const p = getPerson(currentPersonId);
-    if (p.balance === 0) { alert('Déjà quittes !'); return; }
-    const msg = p.balance > 0 ? 'Confirmer paiement de ' + p.balance.toLocaleString('fr-DZ') + ' DA à ' + p.name + '?'
-      : 'Confirmer remboursement de ' + Math.abs(p.balance).toLocaleString('fr-DZ') + ' DA par ' + p.name + '?';
+    if (p.balance === 0) { alert(t('alreadySettled')); return; }
+    const msg = p.balance > 0 ? t('settleConfirmPay') + p.balance.toLocaleString('fr-DZ') + t('settleConfirmTo') + p.name + '?'
+      : t('settleConfirmReceive') + Math.abs(p.balance).toLocaleString('fr-DZ') + t('settleConfirmBy') + p.name + '?';
     if (!confirm(msg)) return;
     p.transactions.unshift({ id: Date.now(), amount: -p.balance, note: '✓ Dette réglée',
       time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
@@ -894,18 +874,28 @@
 
   function resetBalance() {
     const p = getPerson(currentPersonId);
-    if (confirm('Remettre à zéro?')) { p.balance = 0; p.transactions = []; save(); renderPerson(); }
+    if (confirm(t('resetConfirm'))) { p.balance = 0; p.transactions = []; save(); renderPerson(); }
   }
 
   function renderPerson() {
     const p = getPerson(currentPersonId);
+    // Update button labels
+    const settleBtn = document.querySelector('.btn-settle'); if(settleBtn) settleBtn.textContent = t('settle');
+    const histBtn = document.querySelector('.btn-history'); if(histBtn) histBtn.textContent = t('history');
+    const rstBtn = document.querySelector('#personScreen .btn-reset'); if(rstBtn) rstBtn.textContent = t('reset');
+    const notifBtn2 = document.getElementById('notifBtn'); if(notifBtn2 && !notifBtn2.classList.contains('active')) notifBtn2.textContent = t('reminder');
+    // Update transaction button labels
+    const addBtns = document.querySelectorAll('#personScreen .btn-add span:not(.btn-icon):not(.btn-desc)'); addBtns.forEach(b => b.textContent = t('theyPaid'));
+    const addDescs = document.querySelectorAll('#personScreen .btn-add .btn-desc'); addDescs.forEach(b => b.textContent = t('forMe'));
+    const subBtns = document.querySelectorAll('#personScreen .btn-sub span:not(.btn-icon):not(.btn-desc)'); subBtns.forEach(b => b.textContent = t('iPaid'));
+    const subDescs = document.querySelectorAll('#personScreen .btn-sub .btn-desc'); subDescs.forEach(b => b.textContent = t('forThem'));
     const el = document.getElementById('balanceDisplay');
     el.textContent = (p.balance >= 0 ? '' : '−') + Math.abs(p.balance).toLocaleString('fr-DZ');
     el.className = 'balance-amount ' + (p.balance > 0 ? 'pos' : p.balance < 0 ? 'neg' : 'zer');
     const s = document.getElementById('statusText');
-    if (p.balance > 0) s.innerHTML = 'Je dois <strong>' + p.balance.toLocaleString('fr-DZ') + ' DA</strong> à ' + p.name;
-    else if (p.balance < 0) s.innerHTML = p.name + ' me doit <strong>' + Math.abs(p.balance).toLocaleString('fr-DZ') + ' DA</strong>';
-    else s.innerHTML = p.transactions.length ? 'On est quittes ✓' : 'Aucune transaction';
+    if (p.balance > 0) s.innerHTML = t('iOwe') + ' <strong>' + p.balance.toLocaleString('fr-DZ') + ' DA</strong> ' + t('to') + ' ' + p.name;
+    else if (p.balance < 0) s.innerHTML = p.name + ' ' + t('owesMe') + ' <strong>' + Math.abs(p.balance).toLocaleString('fr-DZ') + ' DA</strong>';
+    else s.innerHTML = p.transactions.length ? t('quittes') : t('noTx');
   }
 
   // HISTORY
@@ -932,7 +922,7 @@
     let txs = [...p.transactions];
     if (search) txs = txs.filter(tx => (tx.note || '').toLowerCase().includes(search) || String(Math.abs(tx.amount)).includes(search));
     if (sortMode === 'amount') txs.sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
-    if (!txs.length) { list.innerHTML = '<div class="empty-state">Aucune transaction</div>'; return; }
+    if (!txs.length) { list.innerHTML = '<div class="empty-state">' + t('noTx') + '</div>'; return; }
     const allTxs = [...p.transactions].reverse();
     let running = 0; const runMap = {};
     allTxs.forEach(tx => { running += tx.amount; runMap[tx.id] = running; });
@@ -943,13 +933,13 @@
       return '<div class="history-item ' + cls + '">' +
         '<div class="history-top"><div class="history-left">' +
           '<div class="history-amount">' + (tx.amount >= 0 ? '+' : '') + tx.amount.toLocaleString('fr-DZ') + ' DA</div>' +
-          '<div class="history-note">' + (tx.note || (tx.amount >= 0 ? p.name + ' a payé pour moi' : "J'ai payé pour " + p.name)) + '</div>' +
+          '<div class="history-note">' + (tx.note || (tx.amount >= 0 ? p.name + t('paidForMe') : t('iPaidFor') + p.name)) + '</div>' +
         '</div><div class="history-meta"><div class="history-time">' + tx.date + ' ' + tx.time + '</div>' +
         '<div class="history-actions">' +
           (tx.isSettle ? '' : '<button class="btn-edit-tx" onclick="openEditModal(' + tx.id + ')">✎</button>') +
           '<button class="btn-delete-tx" onclick="deleteTxFromHistory(' + tx.id + ')">✕</button>' +
         '</div></div></div>' +
-        '<div class="running-balance">Solde après: <span style="' + rc + '">' + (rb >= 0 ? '' : '−') + Math.abs(rb).toLocaleString('fr-DZ') + ' DA</span></div></div>';
+        '<div class="running-balance">' + t("runningBalance") + '<span style="' + rc + '">' + (rb >= 0 ? '' : '−') + Math.abs(rb).toLocaleString('fr-DZ') + ' DA</span></div></div>';
     }).join('');
   }
 
@@ -965,7 +955,7 @@
   function clearAll() {
     const p = getPerson(currentPersonId);
     if (!p.transactions.length) return;
-    if (confirm("Effacer tout?")) { p.transactions = []; p.balance = 0; save(); renderHistory(); }
+    if (confirm(t("clearConfirm"))) { p.transactions = []; p.balance = 0; save(); renderHistory(); }
   }
 
   function openEditModal(id) {
@@ -998,7 +988,7 @@
     const p = getPerson(currentPersonId);
     p.notifTime = document.getElementById('notifTime').value;
     save(); updateNotifBtn(); closeNotifModal();
-    alert('Rappel activé à ' + p.notifTime + ' chaque jour !');
+    alert(t('reminderSet') + p.notifTime + t('reminderSetSuffix'));
   }
   function disableNotif() {
     getPerson(currentPersonId).notifTime = null;
@@ -1076,6 +1066,17 @@
 
   function renderBudget() {
     document.getElementById('monthTitle').textContent = monthLabel(currentMonthKey);
+    // Update budget static labels
+    const bIncLabel = document.querySelector('.budget-stat:nth-child(1) .budget-stat-label'); if(bIncLabel) bIncLabel.textContent = t('revenus');
+    const bExpLabel = document.querySelector('.budget-stat:nth-child(2) .budget-stat-label'); if(bExpLabel) bExpLabel.textContent = t('depenses');
+    const bBalLabel = document.querySelector('.budget-stat:nth-child(3) .budget-stat-label'); if(bBalLabel) bBalLabel.textContent = t('solde');
+    const addTxBtn = document.querySelector('.btn-add-tx'); if(addTxBtn) addTxBtn.textContent = t('addBtn');
+    const incLabel = document.getElementById('incomeLabel'); if(incLabel) incLabel.textContent = t('revenus');
+    const expLabel = document.getElementById('expenseLabel'); if(expLabel) expLabel.textContent = t('depenses');
+    const compareTitle = document.querySelector('.compare-title'); if(compareTitle) compareTitle.textContent = t('compareTitle');
+    const recurSection = document.querySelector('#budgetScreen [onclick="openRecurringModal()"]'); if(recurSection) recurSection.textContent = t('addRecurring');
+    const savingTotalLabel = document.getElementById('savingTotalLabel'); if(savingTotalLabel) savingTotalLabel.textContent = t('totalSaved');
+    const byCatLabel = document.querySelector('#budgetScreen .section-title'); if(byCatLabel) byCatLabel.textContent = t('byCategory');
     renderRecurring();
 
     // Quick add (top 5 most frequent transactions)
@@ -1118,8 +1119,8 @@
     const prevBal = prevStats.inc - prevStats.exp;
     document.getElementById('cLastBal').textContent = (prevBal >= 0 ? '+' : '') + prevBal.toLocaleString('fr-DZ');
     document.getElementById('cLastBal').style.color = prevBal >= 0 ? 'var(--green)' : 'var(--red)';
-    document.getElementById('compareThisLabel').textContent = monthLabel(currentMonthKey).split(' ')[0];
-    document.getElementById('compareLastLabel').textContent = monthLabel(prevKey).split(' ')[0];
+    document.getElementById('compareThisLabel').textContent = t('thisMonth');
+    document.getElementById('compareLastLabel').textContent = t('lastMonth');
 
     renderCategoryRow();
     const m = data.budget[currentMonthKey];
@@ -1128,7 +1129,6 @@
     const expense = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
     const balance = income - expense;
     const saved = Math.max(0, balance);
-    const goal = data.savingsGoal;
 
     document.getElementById('bIncome').textContent = income.toLocaleString('fr-DZ');
     document.getElementById('bExpense').textContent = expense.toLocaleString('fr-DZ');
@@ -1136,16 +1136,7 @@
     bEl.textContent = (balance >= 0 ? '' : '−') + Math.abs(balance).toLocaleString('fr-DZ');
     bEl.className = 'budget-stat-value balance' + (balance < 0 ? ' neg' : '');
 
-    // Savings
-    const pct = goal > 0 ? Math.min(100, Math.round((saved / goal) * 100)) : 0;
-    document.getElementById('savingsBar').style.width = pct + '%';
-    if (goal > 0) {
-      document.getElementById('savingsPct').textContent = pct + '% atteint';
-      document.getElementById('savingsAmt').textContent = saved.toLocaleString('fr-DZ') + ' / ' + goal.toLocaleString('fr-DZ') + ' DA';
-    } else {
-      document.getElementById('savingsPct').textContent = 'Aucun objectif défini';
-      document.getElementById('savingsAmt').textContent = '';
-    }
+
 
     // Categories breakdown
     const expenseTxs = txs.filter(t => t.type === 'expense');
@@ -1161,7 +1152,7 @@
       return '<div class="cat-row' + (over ? ' over' : '') + '"><div class="cat-row-top"><div class="cat-row-name">' + cat + '</div><div class="cat-row-amount">' + amt.toLocaleString('fr-DZ') + ' DA</div></div>' +
         '<div class="cat-bar-bg"><div class="cat-bar-fill" style="width:' + pct + '%' + (over ? ';background:var(--red)' : '') + '"></div></div>' +
         '<div class="cat-row-limit">' + limitTxt + '</div></div>';
-    }).join('') || '<div class="empty-state">Aucune dépense ce mois</div>';
+    }).join('') || '<div class="empty-state">' + t('noExpense') + '</div>';
 
     // TX list
     // Pie chart
@@ -1187,17 +1178,18 @@
     } else {
       ctx.beginPath(); ctx.arc(55,55,50,0,2*Math.PI); ctx.fillStyle = 'var(--surface)'; ctx.fill();
       ctx.beginPath(); ctx.arc(55,55,28,0,2*Math.PI); ctx.fillStyle = '#161512'; ctx.fill();
-      document.getElementById('pieLegend').innerHTML = '<div style="color:var(--muted);font-size:12px">Aucune dépense</div>';
+      document.getElementById('pieLegend').innerHTML = '<div style="color:var(--muted);font-size:12px">' + t('noExpense') + '</div>';
     }
 
     const txs2 = m ? m.transactions : [];
-    document.getElementById('budgetTxList').innerHTML = txs2.length ? txs2.map(t =>
+    const txListEl = document.getElementById('budgetTxList');
+    txListEl.innerHTML = txs2.length ? txs2.map(t =>
       '<div class="budget-tx-item ' + t.type + '">' +
       '<div class="budget-tx-left"><div class="budget-tx-cat">' + t.category + '</div><div class="budget-tx-note">' + (t.note || '—') + '</div></div>' +
       '<div class="budget-tx-right"><div class="budget-tx-amount">' + (t.type === 'income' ? '+' : '−') + t.amount.toLocaleString('fr-DZ') + ' DA</div>' +
       '<div class="budget-tx-date">' + t.date + '</div></div>' +
       '<div style="display:flex;flex-direction:column;gap:4px;margin-left:8px">' + '<button class="budget-tx-delete" onclick="duplicateBudgetTxById(' + t.id + ')" title="Dupliquer" style="font-size:11px;border:1px solid var(--border);border-radius:4px;padding:2px 5px">⧉</button>' + '<button class="budget-tx-delete" onclick="deleteBudgetTx(' + t.id + ')">✕</button></div></div>'
-    ).join('') : '<div class="empty-state">Aucune transaction ce mois</div>';
+    ).join('') : '<div class="empty-state">' + t('noTx') + '</div>';
   }
 
 
@@ -1294,7 +1286,7 @@
   }
 
   function deleteRecurring(id) {
-    if (confirm('Supprimer ce revenu récurrent?')) {
+    if (confirm(t('deleteConfirm') + r.name + '?')) {
       data.recurring = data.recurring.filter(r => r.id !== id);
       save();
       renderRecurring();
@@ -1304,7 +1296,7 @@
   function renderRecurring() {
     const list = document.getElementById('recurringList');
     if (!data.recurring.length) {
-      list.innerHTML = '<div class="empty-state" style="margin-bottom:0">Aucun revenu récurrent</div>';
+      list.innerHTML = '<div class="empty-state" style="margin-bottom:0">' + t('noRecurring') + '</div>';
       return;
     }
     list.innerHTML = data.recurring.map(r =>
@@ -1312,7 +1304,7 @@
       '<div class="budget-tx-left"><div class="budget-tx-cat">' + r.category + ' · ' + (r.freq === 'weekly' ? 'Chaque semaine' : 'Jour ' + r.day) + '</div>' +
       '<div class="budget-tx-note">' + r.name + '</div></div>' +
       '<div class="budget-tx-right"><div class="budget-tx-amount" style="color:' + (r.type === 'expense' ? 'var(--red)' : 'var(--green)') + '">' + (r.type === 'expense' ? '-' : '+') + r.amount.toLocaleString("fr-DZ") + ' DA</div>' +
-      '<div class="budget-tx-date">chaque mois</div></div>' +
+      '<div class="budget-tx-date">' + (r.freq === 'weekly' ? t('eachWeek') : t('eachMonth')) + '</div></div>' +
       '<button class="budget-tx-delete" onclick="deleteRecurring(' + r.id + ')">✕</button></div>'
     ).join('');
   }
@@ -1433,7 +1425,7 @@
     document.getElementById('savingTotalAmount').textContent = total.toLocaleString('fr-DZ') + ' DA';
     const list = document.getElementById('goalsList');
     if (!data.goals.length) {
-      list.innerHTML = '<div class="empty-goals">Aucun projet d\'épargne</div>';
+      list.innerHTML = '<div class="empty-goals">' + t('saving') + '</div>';
       return;
     }
     list.innerHTML = data.goals.map(g => {
@@ -1472,18 +1464,18 @@
     document.getElementById('goalProgressBar').style.width = pct + '%';
     document.getElementById('goalProgressBar').style.background = complete ? 'var(--gold)' : 'var(--green)';
     const remaining = g.target > 0 ? g.target - g.saved : 0;
-    document.getElementById('goalRemaining').textContent = complete ? '🎉 Objectif atteint !' : (g.target > 0 ? 'Encore ' + Math.max(0, remaining).toLocaleString('fr-DZ') + ' DA' : '');
+    document.getElementById('goalRemaining').textContent = complete ? t('goalReached') : (g.target > 0 ? t('goalRemaining') + Math.max(0, remaining).toLocaleString('fr-DZ') + ' DA' : '');
   }
 
   function renderGoalHistory() {
     const g = getGoal(currentGoalId);
     const list = document.getElementById('goalHistoryList');
-    if (!g.transactions.length) { list.innerHTML = '<div class="empty-state">Aucune transaction</div>'; return; }
+    if (!g.transactions.length) { list.innerHTML = '<div class="empty-state">' + t('noTx') + '</div>'; return; }
     list.innerHTML = g.transactions.map(tx =>
       '<div class="history-item ' + (tx.amount >= 0 ? 'positive' : 'negative') + '">' +
       '<div class="history-top"><div class="history-left">' +
         '<div class="history-amount">' + (tx.amount >= 0 ? '+' : '') + tx.amount.toLocaleString('fr-DZ') + ' DA</div>' +
-        '<div class="history-note">' + (tx.note || (tx.amount >= 0 ? 'Dépôt' : 'Retrait')) + '</div>' +
+        '<div class="history-note">' + (tx.note || (tx.amount >= 0 ? t('goalDeposit2') : t('goalWithdraw2'))) + '</div>' +
       '</div><div class="history-meta">' +
         '<div class="history-time">' + tx.date + ' ' + tx.time + '</div>' +
         '<button class="btn-delete-tx" onclick="deleteGoalTx(' + tx.id + ')">✕</button>' +
@@ -1661,10 +1653,10 @@
     const expense = txs.filter(t => t.type === 'expense').reduce((s,t) => s+t.amount, 0);
     const balance = income - expense;
     let text = '=== ' + monthLabel(currentMonthKey).toUpperCase() + ' ===\n';
-    text += 'Revenus:   ' + income.toLocaleString('fr-DZ') + ' DA\n';
-    text += 'Dépenses:  ' + expense.toLocaleString('fr-DZ') + ' DA\n';
-    text += 'Solde:     ' + balance.toLocaleString('fr-DZ') + ' DA\n\n';
-    text += '--- TRANSACTIONS ---\n';
+    text += t('revenus') + ':   ' + income.toLocaleString('fr-DZ') + ' DA\n';
+    text += t('depenses') + ':  ' + expense.toLocaleString('fr-DZ') + ' DA\n';
+    text += t('solde') + ':     ' + balance.toLocaleString('fr-DZ') + ' DA\n\n';
+    text += '--- ' + t('transactions') + ' ---\n';
     txs.forEach(t => {
       text += (t.type === 'income' ? '+' : '-') + t.amount.toLocaleString('fr-DZ') + ' DA  ' + t.category + '  ' + (t.note || '') + '  ' + t.date + '\n';
     });
@@ -1675,7 +1667,7 @@
       el.value = text; document.body.appendChild(el);
       el.select(); document.execCommand('copy');
       document.body.removeChild(el);
-      alert('Résumé copié dans le presse-papiers !');
+      alert(t('copied'));
     }
   }
 
@@ -1939,6 +1931,41 @@
     </div>
     <div class="modal-btns">
       <button class="modal-btn confirm" onclick="closeSettingsModal()" id="settingsCloseBtn">Fermer</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <h3 id="settingsTitle">Paramètres</h3>
+    <label class="modal-label" id="settingsLangLabel">Langue</label>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+      <button class="lang-small-btn" onclick="changeLang('fr')">🇫🇷 FR</button>
+      <button class="lang-small-btn" onclick="changeLang('en')">🇬🇧 EN</button>
+      <button class="lang-small-btn" onclick="changeLang('ar')">🇩🇿 AR</button>
+    </div>
+    <label class="modal-label" id="settingsThemeLabel">Thème</label>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+      <button class="lang-small-btn" onclick="setTheme('dark')" id="themeDarkBtn">🌙 Sombre</button>
+      <button class="lang-small-btn" onclick="setTheme('light')" id="themeLightBtn">☀️ Clair</button>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn confirm" onclick="closeSettingsModal()" id="settingsCloseBtn">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- SAVINGS GOAL MODAL -->
+<div class="modal-overlay" id="goalModal">
+  <div class="modal">
+    <h3 id="goalModalTitle">Objectif d'épargne</h3>
+    <label class="modal-label" id="goalModalLabel">Objectif mensuel (DA)</label>
+    <input type="number" id="goalInput" placeholder="Ex: 10000" min="0" />
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="closeGoalModal()">Annuler</button>
+      <button class="modal-btn confirm" onclick="saveGoal()">Sauvegarder</button>
     </div>
   </div>
 </div>
