@@ -101,8 +101,8 @@
   .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
   .btn { border: none; border-radius: 10px; padding: 14px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; line-height: 1.3; }
   .btn:active { transform: scale(0.97); }
-  .btn-add { background: rgba(76,175,125,0.12); border: 1px solid rgba(76,175,125,0.3); color: var(--green); }
-  .btn-sub { background: rgba(224,92,92,0.12); border: 1px solid rgba(224,92,92,0.3); color: var(--red); }
+  .btn-add { background: rgba(224,92,92,0.12); border: 1px solid rgba(224,92,92,0.3); color: var(--red); }
+  .btn-sub { background: rgba(76,175,125,0.12); border: 1px solid rgba(76,175,125,0.3); color: var(--green); }
   .btn-icon { font-size: 18px; } .btn-desc { font-size: 10px; opacity: 0.7; font-family: 'DM Mono', monospace; }
   .btn-settle { width: 100%; background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3); border-radius: 10px; padding: 13px; color: var(--gold); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
   .btn-history { width: 100%; background: rgba(120,110,95,0.1); border: 1px solid var(--border); border-radius: 10px; padding: 13px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
@@ -511,7 +511,7 @@
 
   <div class="divider"></div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-    <div class="section-title" style="margin-bottom:0">🔁 Revenus récurrents</div>
+    <div class="section-title" style="margin-bottom:0">🔁 Transactions récurrentes</div>
     <button class="btn-set-goal" onclick="openRecurringModal()">＋ Ajouter</button>
   </div>
   <div id="recurringList"></div>
@@ -1583,6 +1583,47 @@
     const budgetTitle = document.querySelector('#budgetScreen .nav-title');
     if (budgetTitle) budgetTitle.innerHTML = t('budgetManager').replace(' ', ' <span>') + '</span>';
     // Re-render to update dynamic text
+    // Saving screen
+    const savingNav = document.getElementById('savingNavTitle');
+    if (savingNav) savingNav.innerHTML = t('savingNav');
+    const savingTotal = document.getElementById('savingTotalLabel');
+    if (savingTotal) savingTotal.textContent = t('totalSaved');
+    const goalDetailLabel = document.getElementById('goalDetailLabel');
+    if (goalDetailLabel) goalDetailLabel.textContent = t('goalProject');
+    const goalSavedLabel = document.getElementById('goalSavedLabel');
+    if (goalSavedLabel) goalSavedLabel.textContent = t('goalSavedLabel');
+    const goalAddLabel = document.getElementById('goalAddLabel');
+    if (goalAddLabel) goalAddLabel.textContent = t('goalAddLabel');
+    const goalDepositBtn = document.getElementById('goalDepositBtn');
+    if (goalDepositBtn) goalDepositBtn.textContent = t('goalDeposit');
+    const goalWithdrawBtn = document.getElementById('goalWithdrawBtn');
+    if (goalWithdrawBtn) goalWithdrawBtn.textContent = t('goalWithdraw');
+    const goalHistoryBtn = document.getElementById('goalHistoryBtn');
+    if (goalHistoryBtn) goalHistoryBtn.textContent = t('goalHistory');
+    const goalDeleteBtn = document.getElementById('goalDeleteBtn');
+    if (goalDeleteBtn) goalDeleteBtn.textContent = t('goalDelete');
+    const goalHistLabel = document.getElementById('goalHistLabel');
+    if (goalHistLabel) goalHistLabel.textContent = t('goalHistLabel');
+    const goalHistTxLabel = document.getElementById('goalHistTxLabel');
+    if (goalHistTxLabel) goalHistTxLabel.textContent = t('transactions');
+    const goalHistClearBtn = document.getElementById('goalHistClearBtn');
+    if (goalHistClearBtn) goalHistClearBtn.textContent = t('goalHistClear');
+    const goalAddAmountInput = document.getElementById('goalAddAmount');
+    if (goalAddAmountInput) goalAddAmountInput.placeholder = t('montant');
+    const goalAddNoteInput = document.getElementById('goalAddNote');
+    if (goalAddNoteInput) goalAddNoteInput.placeholder = t('goalNotePlaceholder');
+    const newGoalNameInput = document.getElementById('newGoalName');
+    if (newGoalNameInput) newGoalNameInput.placeholder = t('goalNamePlaceholder');
+    const newGoalTargetInput = document.getElementById('newGoalTarget');
+    if (newGoalTargetInput) newGoalTargetInput.placeholder = t('goalTargetPlaceholder');
+    // Landing saving card
+    const landingSavingTitle = document.querySelector('.landing-card.saving .landing-card-title');
+    if (landingSavingTitle) landingSavingTitle.textContent = t('saving');
+    const landingSavingDesc = document.querySelector('.landing-card.saving .landing-card-desc');
+    if (landingSavingDesc) landingSavingDesc.textContent = t('savingDesc');
+    if (currentGoalId) renderGoalDetail();
+    renderSaving();
+
     renderHome();
     if (currentPersonId) renderPerson();
     renderBudget();
@@ -1675,7 +1716,7 @@
       allClear: 'Tout réglé', youOwe: 'Vous devez', owedToYou: 'On vous doit',
       soldeAvec: 'Solde avec', soldeActuel: 'Solde actuel',
       newTx: 'Nouvelle transaction', montant: 'Montant (DA)', note: 'Note (ex: épicerie…)',
-      theyPaid: 'Il/Elle a payé', forMe: 'pour moi', iPaid: "J'ai payé", forThem: 'pour lui/elle',
+      theyPaid: 'Il/Elle m\'a prêté', forMe: 'je dois', iPaid: 'Je lui ai prêté', forThem: 'il/elle doit',
       settle: '✓ Régler la dette', history: '📋 Voir l\'historique', reminder: '🔔 Rappel quotidien',
       reminderActive: '🔔 Rappel: ', reset: '⟳ Remettre à zéro',
       historyWith: 'Historique avec', transactions: 'Transactions', search: 'Rechercher…',
@@ -1686,7 +1727,7 @@
       savingsGoal: '🎯 Objectif épargne', modify: 'Modifier', noGoal: 'Aucun objectif défini',
       addIncome: '＋ Revenu', addExpense: '− Dépense', addBtn: '＋ Ajouter',
       byCategory: 'Par catégorie', noExpense: 'Aucune dépense ce mois',
-      recurringTitle: '🔁 Revenus récurrents', addRecurring: '＋ Ajouter',
+      recurringTitle: '🔁 Transactions récurrentes', addRecurring: '＋ Ajouter',
       noRecurring: 'Aucun revenu récurrent', eachMonth: 'chaque mois', eachWeek: 'chaque semaine',
       export: '📤 Exporter ce mois', compareTitle: 'Ce mois vs mois dernier',
       thisMonth: 'Ce mois', lastMonth: 'Mois dernier',
@@ -1710,6 +1751,16 @@
       limitError: 'Entrez un montant valide.', recurError: 'Nom et montant requis.',
       dayError: 'Jour entre 1 et 30.', copied: 'Résumé copié dans le presse-papiers !',
       paidForMe: ' a payé pour moi', iPaidFor: "J'ai payé pour ", debtSettled: '✓ Dette réglée',
+      saving: 'Épargne', savingDesc: 'Suivre vos projets et objectifs d\'épargne',
+      savingNav: 'Épargne & Projets', totalSaved: 'Total épargné',
+      goalProject: 'Projet', goalSavedLabel: 'Épargne actuelle',
+      goalAddLabel: 'Ajouter de l\'argent', goalDeposit: 'Déposer', goalWithdraw: 'Retirer',
+      goalHistory: '📋 Voir l\'historique', goalDelete: '🗑 Supprimer ce projet',
+      goalHistLabel: 'Historique', goalHistClear: 'Tout effacer',
+      goalReached: '🎉 Objectif atteint !', goalRemaining: 'Encore ',
+      goalNamePlaceholder: 'Nom du projet (ex: iPhone, Voyage…)',
+      goalTargetPlaceholder: 'Objectif (DA)', goalNotePlaceholder: 'Note (optionnel)',
+      goalDeposit2: 'Dépôt', goalWithdraw2: 'Retrait',
       incomeCats: ['Salaire','Freelance','Cadeau','Autre'],
       expenseCats: ['Nourriture','Transport','Santé','Loyer','Shopping','Loisirs','Factures','Autre'],
       weekdays: [['0','Dimanche'],['1','Lundi'],['2','Mardi'],['3','Mercredi'],['4','Jeudi'],['5','Vendredi'],['6','Samedi']],
@@ -1723,7 +1774,7 @@
       allClear: 'All Clear', youOwe: 'You Owe', owedToYou: 'Owed to You',
       soldeAvec: 'Balance with', soldeActuel: 'Current balance',
       newTx: 'New transaction', montant: 'Amount (DA)', note: 'Note (e.g. groceries…)',
-      theyPaid: 'They paid', forMe: 'for me', iPaid: 'I paid', forThem: 'for them',
+      theyPaid: 'They lent me', forMe: 'I owe', iPaid: 'I lent them', forThem: 'they owe',
       settle: '✓ Settle up', history: '📋 View history', reminder: '🔔 Daily reminder',
       reminderActive: '🔔 Reminder: ', reset: '⟳ Reset to zero',
       historyWith: 'History with', transactions: 'Transactions', search: 'Search…',
@@ -1734,7 +1785,7 @@
       savingsGoal: '🎯 Savings goal', modify: 'Edit', noGoal: 'No goal set',
       addIncome: '＋ Income', addExpense: '− Expense', addBtn: '＋ Add',
       byCategory: 'By category', noExpense: 'No expenses this month',
-      recurringTitle: '🔁 Recurring income', addRecurring: '＋ Add',
+      recurringTitle: '🔁 Recurring transactions', addRecurring: '＋ Add',
       noRecurring: 'No recurring transactions', eachMonth: 'every month', eachWeek: 'every week',
       export: '📤 Export this month', compareTitle: 'This month vs last month',
       thisMonth: 'This month', lastMonth: 'Last month',
@@ -1758,6 +1809,16 @@
       limitError: 'Enter a valid amount.', recurError: 'Name and amount required.',
       dayError: 'Day must be between 1 and 30.', copied: 'Summary copied to clipboard!',
       paidForMe: ' paid for me', iPaidFor: 'I paid for ', debtSettled: '✓ Debt settled',
+      saving: 'Savings', savingDesc: 'Track your projects and savings goals',
+      savingNav: 'Savings & Projects', totalSaved: 'Total saved',
+      goalProject: 'Project', goalSavedLabel: 'Current savings',
+      goalAddLabel: 'Add money', goalDeposit: 'Deposit', goalWithdraw: 'Withdraw',
+      goalHistory: '📋 View history', goalDelete: '🗑 Delete this project',
+      goalHistLabel: 'History', goalHistClear: 'Clear all',
+      goalReached: '🎉 Goal reached!', goalRemaining: 'Still need ',
+      goalNamePlaceholder: 'Project name (e.g. iPhone, Trip…)',
+      goalTargetPlaceholder: 'Target (DA)', goalNotePlaceholder: 'Note (optional)',
+      goalDeposit2: 'Deposit', goalWithdraw2: 'Withdrawal',
       incomeCats: ['Salary','Freelance','Gift','Other'],
       expenseCats: ['Food','Transport','Health','Rent','Shopping','Leisure','Bills','Other'],
       weekdays: [['0','Sunday'],['1','Monday'],['2','Tuesday'],['3','Wednesday'],['4','Thursday'],['5','Friday'],['6','Saturday']],
@@ -1771,7 +1832,7 @@
       allClear: 'لا ديون', youOwe: 'تدين بـ', owedToYou: 'مستحق لك',
       soldeAvec: 'الرصيد مع', soldeActuel: 'الرصيد الحالي',
       newTx: 'معاملة جديدة', montant: 'المبلغ (دج)', note: 'ملاحظة (مثل: بقالة…)',
-      theyPaid: 'دفع/ت عني', forMe: '', iPaid: 'دفعت عنه/ا', forThem: '',
+      theyPaid: 'أقرضني', forMe: 'أنا مدين', iPaid: 'أقرضته/ا', forThem: 'هو/هي مدين',
       settle: '✓ تسوية الدين', history: '📋 عرض السجل', reminder: '🔔 تذكير يومي',
       reminderActive: '🔔 تذكير: ', reset: '⟳ إعادة تعيين',
       historyWith: 'السجل مع', transactions: 'المعاملات', search: 'بحث…',
@@ -1782,7 +1843,7 @@
       savingsGoal: '🎯 هدف الادخار', modify: 'تعديل', noGoal: 'لم يتم تحديد هدف',
       addIncome: '＋ دخل', addExpense: '− مصروف', addBtn: '＋ إضافة',
       byCategory: 'حسب الفئة', noExpense: 'لا مصاريف هذا الشهر',
-      recurringTitle: '🔁 الدخل المتكرر', addRecurring: '＋ إضافة',
+      recurringTitle: '🔁 المعاملات المتكررة', addRecurring: '＋ إضافة',
       noRecurring: 'لا معاملات متكررة', eachMonth: 'كل شهر', eachWeek: 'كل أسبوع',
       export: '📤 تصدير هذا الشهر', compareTitle: 'هذا الشهر مقابل الشهر الماضي',
       thisMonth: 'هذا الشهر', lastMonth: 'الشهر الماضي',
@@ -1806,6 +1867,16 @@
       limitError: 'أدخل مبلغاً صحيحاً.', recurError: 'الاسم والمبلغ مطلوبان.',
       dayError: 'يجب أن يكون اليوم بين 1 و 30.', copied: 'تم نسخ الملخص!',
       paidForMe: ' دفع عني', iPaidFor: 'دفعت عن ', debtSettled: '✓ تمت تسوية الدين',
+      saving: 'الادخار', savingDesc: 'تتبع مشاريعك وأهداف الادخار',
+      savingNav: 'الادخار والمشاريع', totalSaved: 'إجمالي المدخرات',
+      goalProject: 'مشروع', goalSavedLabel: 'المدخرات الحالية',
+      goalAddLabel: 'إضافة مال', goalDeposit: 'إيداع', goalWithdraw: 'سحب',
+      goalHistory: '📋 عرض السجل', goalDelete: '🗑 حذف هذا المشروع',
+      goalHistLabel: 'السجل', goalHistClear: 'مسح الكل',
+      goalReached: '🎉 تم بلوغ الهدف!', goalRemaining: 'لا يزال مطلوب ',
+      goalNamePlaceholder: 'اسم المشروع (مثل: هاتف، رحلة…)',
+      goalTargetPlaceholder: 'الهدف (دج)', goalNotePlaceholder: 'ملاحظة (اختياري)',
+      goalDeposit2: 'إيداع', goalWithdraw2: 'سحب',
       incomeCats: ['راتب','عمل حر','هدية','أخرى'],
       expenseCats: ['طعام','مواصلات','صحة','إيجار','تسوق','ترفيه','فواتير','أخرى'],
       weekdays: [['0','الأحد'],['1','الاثنين'],['2','الثلاثاء'],['3','الأربعاء'],['4','الخميس'],['5','الجمعة'],['6','السبت']],
