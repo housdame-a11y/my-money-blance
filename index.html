@@ -1020,7 +1020,7 @@
   }
 
   function renderCategoryRow() {
-    const cats = currentTxType === 'income' ? INCOME_CATS : EXPENSE_CATS;
+    const cats = currentTxType === 'income' ? t('incomeCats') : t('expenseCats');
     if (!currentCategory) currentCategory = cats[0];
     document.getElementById('categoryRow').innerHTML = cats.map(c =>
       '<button class="cat-btn' + (c === currentCategory ? ' active' : '') + '" onclick="selectCat(\'' + c + '\')">' + c + '</button>'
@@ -1074,9 +1074,11 @@
     const incLabel = document.getElementById('incomeLabel'); if(incLabel) incLabel.textContent = t('revenus');
     const expLabel = document.getElementById('expenseLabel'); if(expLabel) expLabel.textContent = t('depenses');
     const compareTitle = document.querySelector('.compare-title'); if(compareTitle) compareTitle.textContent = t('compareTitle');
-    const recurSection = document.querySelector('#budgetScreen [onclick="openRecurringModal()"]'); if(recurSection) recurSection.textContent = t('addRecurring');
-    const savingTotalLabel = document.getElementById('savingTotalLabel'); if(savingTotalLabel) savingTotalLabel.textContent = t('totalSaved');
-    const byCatLabel = document.querySelector('#budgetScreen .section-title'); if(byCatLabel) byCatLabel.textContent = t('byCategory');
+    const recurAddBtn = document.querySelector('#budgetScreen [onclick="openRecurringModal()"]'); if(recurAddBtn) recurAddBtn.textContent = t('addRecurring');
+    const savingTotalLabel2 = document.getElementById('savingTotalLabel'); if(savingTotalLabel2) savingTotalLabel2.textContent = t('totalSaved');
+    const exportBtn = document.querySelector('.btn-export'); if(exportBtn) exportBtn.textContent = t('export');
+    const budgetAmtInput = document.getElementById('budgetAmount'); if(budgetAmtInput) budgetAmtInput.placeholder = t('montant');
+    const budgetNoteInput = document.getElementById('budgetNote'); if(budgetNoteInput) budgetNoteInput.placeholder = t('note');
     renderRecurring();
 
     // Quick add (top 5 most frequent transactions)
@@ -1138,6 +1140,13 @@
 
 
 
+    // Update section title labels
+    document.querySelectorAll('#budgetScreen .section-title').forEach(el => {
+      const txt = el.textContent.toLowerCase();
+      if (txt.includes('catégorie') || txt.includes('category') || txt.includes('فئة') || txt.includes('category')) el.textContent = t('byCategory');
+      else if (txt.includes('transaction')) el.textContent = t('transactions');
+      else if (txt.includes('récurrent') || txt.includes('recurring') || txt.includes('متكرر') || txt.includes('🔁')) el.textContent = t('recurringTitle');
+    });
     // Categories breakdown
     const expenseTxs = txs.filter(t => t.type === 'expense');
     const catMap = {};
@@ -1619,6 +1628,27 @@
     renderHome();
     if (currentPersonId) renderPerson();
     renderBudget();
+  }
+
+
+
+  function getDayLabel(day) {
+    if (lang === 'ar') return 'يوم ' + day;
+    if (lang === 'en') return 'Day ' + day;
+    return 'Jour ' + day;
+  }
+
+  function translateCat(cat) {
+    // Find in all languages and return current lang version
+    const allLangs = ['fr', 'en', 'ar'];
+    const allCats = ['incomeCats', 'expenseCats'];
+    for (const catKey of allCats) {
+      for (const lng of allLangs) {
+        const idx = T[lng][catKey].indexOf(cat);
+        if (idx !== -1) return T[lang][catKey][idx] || cat;
+      }
+    }
+    return cat;
   }
 
   // ===================== CATEGORY LIMITS =====================
